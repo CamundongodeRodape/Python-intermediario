@@ -1,0 +1,107 @@
+main.py
+"""Interface de linha de comando do pacote personalizador."""
+
+from __future__ import annotations
+
+import argparse
+
+from personalizador import estilo, layout, painel, progresso
+
+
+MODULES = {
+    "1": ("layout", layout),
+    "layout": ("layout", layout),
+    "2": ("painel", painel),
+    "painel": ("painel", painel),
+    "3": ("progresso", progresso),
+    "progresso": ("progresso", progresso),
+    "4": ("estilo", estilo),
+    "estilo": ("estilo", estilo),
+}
+
+FUNCOES = {
+    "layout": {
+        "1": layout.mostrar_layout,
+        "mostrar_layout": layout.mostrar_layout,
+        "2": layout.mostrar_layout_dividido,
+        "mostrar_layout_dividido": layout.mostrar_layout_dividido,
+    },
+    "painel": {
+        "1": painel.mostrar_painel,
+        "mostrar_painel": painel.mostrar_painel,
+        "2": painel.mostrar_painel_estilizado,
+        "mostrar_painel_estilizado": painel.mostrar_painel_estilizado,
+    },
+    "progresso": {
+        "1": progresso.mostrar_progresso,
+        "mostrar_progresso": progresso.mostrar_progresso,
+        "2": progresso.mostrar_progresso_por_palavra,
+        "mostrar_progresso_por_palavra": progresso.mostrar_progresso_por_palavra,
+    },
+    "estilo": {
+        "1": estilo.mostrar_estilo,
+        "mostrar_estilo": estilo.mostrar_estilo,
+        "2": estilo.mostrar_estilo_rainbow,
+        "mostrar_estilo_rainbow": estilo.mostrar_estilo_rainbow,
+    },
+}
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    modulos_help = "1=layout, 2=painel, 3=progresso, 4=estilo (ou nome)"
+    funcoes_help = (
+        "layout: 1=mostrar_layout, 2=mostrar_layout_dividido; "
+        "painel: 1=mostrar_painel, 2=mostrar_painel_estilizado; "
+        "progresso: 1=mostrar_progresso, 2=mostrar_progresso_por_palavra; "
+        "estilo: 1=mostrar_estilo, 2=mostrar_estilo_rainbow (ou nome)"
+    )
+
+    parser = argparse.ArgumentParser(description="Personalizador usando rich.")
+    parser.add_argument(
+        "texto",
+        help="Texto a imprimir ou caminho do arquivo (use -a para arquivo).",
+    )
+    parser.add_argument(
+        "-a",
+        "--arquivo",
+        action="store_true",
+        help="Indica que o argumento texto e um caminho de arquivo.",
+    )
+    parser.add_argument(
+        "-m",
+        "--modulo",
+        default="layout",
+        help=f"Escolha o modulo. Opcoes: {modulos_help}.",
+    )
+    parser.add_argument(
+        "-f",
+        "--funcao",
+        default="1",
+        help=f"Escolha a funcao. Opcoes: {funcoes_help}.",
+    )
+    return parser
+
+
+def main() -> None:
+    """Executa a CLI."""
+    parser = _build_parser()
+    args = parser.parse_args()
+
+    modulo_chave = args.modulo.strip().lower()
+    if modulo_chave not in MODULES:
+        parser.error("Modulo invalido. Use -m com uma das opcoes listadas.")
+
+    modulo_nome, _mod = MODULES[modulo_chave]
+    funcoes_modulo = FUNCOES[modulo_nome]
+    funcao_chave = args.funcao.strip()
+    funcao = funcoes_modulo.get(funcao_chave) or funcoes_modulo.get(
+        funcao_chave.lower()
+    )
+    if funcao is None:
+        parser.error("Funcao invalida para o modulo escolhido.")
+
+    funcao(args.texto, args.arquivo)
+
+
+if __name__ == "__main__":
+    main()
